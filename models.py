@@ -22,7 +22,7 @@ class CreateSnowboardRequest(SQLModel):
     has_bindings: bool
     brand: Brand
 
-class UpdateSnowboardRequest(SQLModel):
+class PatchSnowboardRequest(SQLModel):
     length: int | None = None
     color: str | None = None
     has_bindings: bool | None = None

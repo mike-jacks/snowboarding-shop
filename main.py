@@ -4,7 +4,7 @@ from uuid import uuid4 as new_uuid
 from fastapi import FastAPI, HTTPException, status
 from sqlmodel import Session, select, update, delete
 
-from models import Snowboard, Brand, CreateSnowboardRequest, UpdateSnowboardRequest
+from models import Snowboard, Brand, CreateSnowboardRequest, PatchSnowboardRequest
 
 from db import engine
 
@@ -36,7 +36,23 @@ async def add_snowboard(new_snowboard: CreateSnowboardRequest):
         return snowboard
 
 @app.put("/snowboards/{snowboard_id}")
-async def update_snowboard(snowboard_id: int, new_snowboard: UpdateSnowboardRequest):
+async def update_snowboard(snowboard_id: int, new_snowboard: CreateSnowboardRequest):
+    with Session(bind=engine) as session:
+        updated_snowboard = session.exec(select(Snowboard).where(Snowboard.id == snowboard_id)).first()
+        if not updated_snowboard:
+            snowboard = Snowboard.model_validate(new_snowboard, update={"id":snowboard_id})
+            session.add(snowboard)
+            session.commit()
+            session.refresh(snowboard)
+            return snowboard
+        for attr, value in new_snowboard.model_dump().items():
+            setattr(updated_snowboard, attr, value)
+        session.commit()
+        session.refresh(updated_snowboard)
+        return updated_snowboard
+
+@app.patch("/snowboards/{snowboard_id}")
+async def update_snowboard(snowboard_id: int, new_snowboard: PatchSnowboardRequest):
     with Session(bind=engine) as session:
         updated_snowboard = session.exec(select(Snowboard).where(Snowboard.id == snowboard_id)).first()
         if not updated_snowboard:
